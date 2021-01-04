@@ -91,7 +91,7 @@ plot_max_utr(max_utr_lengths)
 ####################
 
 # Cluster TSSs
-exp <- tss_clustering(exp, max_distance = 25, max_width = 100, threshold = 10)
+exp <- tss_clustering(exp, max_distance = 25, max_width = 250, threshold = 10)
 
 # Associate TSSs with TSRs
 exp <- associate_with_tsr(exp)
