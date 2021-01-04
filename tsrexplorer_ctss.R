@@ -9,10 +9,10 @@ library(TxDb.Scerevisiae.UCSC.sacCer3.sgdGene)
 # http://www.yeastss.org/jbrowse/JBrowse_data/Saccharomyces_cerevisiae/ctss/
 
 # Generate sample sheet
-samples <- data.frame(sample_name = before_last_dot(list.files("ctss/")), 
-           file_1 = list.files("ctss/", full.names = TRUE), 
+samples <- data.frame(sample_name = before_last_dot(list.files("ctss")), 
+           file_1 = list.files("ctss", full.names = TRUE), 
            file_2 = NA,
-           condition = before_last_dot(before_last_dot(list.files("ctss/"))))
+           condition = before_last_dot(before_last_dot(list.files("ctss"))))
 
 # Create tsrexplorer object
 exp <- tsr_explorer(sample_sheet = samples, 
