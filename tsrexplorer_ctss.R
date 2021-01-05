@@ -49,12 +49,11 @@ features <- detect_features(exp, data_type = "tss", threshold = 20)
 plot_detected_features(features) +
   scale_fill_viridis_d(direction = -1)
 
-# Normalize counts
-exp <- normalize_counts(exp, data_type = "tss", method = "deseq2", 
-                        threshold = 20, n_samples = 1)
-
 # Apply threshold
 exp <- apply_threshold(exp, threshold = 20, n_samples = 1, use_normalized = FALSE)
+
+# Normalize counts
+exp <- normalize_counts(exp, data_type = "tss", method = "deseq2")
 
 # Correlation (Fig. 1E)
 plot_correlation(

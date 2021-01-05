@@ -137,20 +137,26 @@ plot_tsr_metric(exp, tsr_metrics = c("shape_index", "iqr_width", "peak_balance")
 ```{r}
 # Mark dominant TSS per TSR
 exp <- mark_dominant(exp, data_type = "tss", threshold = 20, use_normalized = FALSE)
+```
 
+```{r fig.cap = "Sequence logos"}
 # Sequence logos (Fig. 2B-C)
-conditions <- list(grouping = "shape_class")
+conditions <- list(quantile_by = "shape_index", n_quantiles = 5, filters = "iqr_width > 1")
 
 seqs <- tss_sequences(exp, dominant = TRUE, data_conditions = conditions, 
                       samples = "ScerYPD.1", threshold = 20)
 
 plot_sequence_logo(seqs, ncol = 2)
+```
 
+```{r}
 # Color map (Fig. 2D)
-plot_sequence_colormap(seqs, samples = "ScerYPD.1")
+#plot_sequence_colormap(seqs, samples = "ScerYPD.1")
+```
 
+```{r fig.align = "center", fig.cap = "Dinucleotide frequencies for YPD replicate 1"}
 # Dinucleotide frequencies (Fig. 2E)
-frequencies <- dinucleotide_frequencies(exp, dominant = TRUE, samples = "ScerYPD.1")
+frequencies <- dinucleotide_frequencies(exp, dominant = FALSE, samples = "ScerYPD.1")
 
 plot_dinucleotide_frequencies(frequencies, ncol = 4) +
   scale_fill_viridis_c()
@@ -181,27 +187,33 @@ for(i in treatments) {
 plot_num_de(exp, data_type = "tsr", de_comparisons = "all",
             log2fc_cutoff = 1, fdr_cutoff = 0.05, 
             keep_unchanged = FALSE) +
+  theme_classic() +
   scale_fill_viridis_d(end = 0.5) +
-  theme_bw()
+  scale_y_continuous(expand = c(0,0), limits = c(0,6000)) +
+  theme(panel.grid = element_blank(),
+        axis.text.x = element_text(angle = 45, hjust = 1),
+        text = element_text(color = "black")) 
 ```
 
 ```{r fig.align = "center", fig.cap = "MA plot for YPG vs. YPD comparison"}
 plot_ma(exp, data_type = "tsr", de_comparisons = "ScerGal_vs_YPD", size = 0.5) +
   scale_color_viridis_d() +
-  theme_bw()
+  theme_bw() +
+  theme(text = element_text(color = "black"))
 ```
 
 ```{r fig.align = "center", fig.cap = "Volcano plot for YPG vs. YPD comparison"}
 plot_volcano(exp, data_type = "tsr", de_comparisons = "ScerGal_vs_YPD", size = 0.5) +
   scale_color_viridis_d() +
-  theme_bw()
+  theme_bw() +
+  theme(text = element_text(color = "black"))
 ```
 
 ### Functional annotation of differential TSRs
 ```{r fig.align = "center", fig.height = 10, fig.cap = "Dot plot of GO biological process enrichment in upregulated and downregulated TSRs in for YPG vs. YPD comparison"}
 # Annotate DE TSRs
 exp <- annotate_features(exp, data_type = "tsr_diff", feature_type = "transcript",
-                         upstream = 250, downstream = 100)
+                         upstream = 500, downstream = 100)
 
 # GO analysis (Fig. 2I)
 enrichment_data <- export_for_enrichment(exp, data_type = "tsr", 
@@ -223,8 +235,10 @@ go_enrichment <- compareCluster(
   keyType="ENSEMBL"
 )
 
-dotplot(go_enrichment, font.size = 12, showCategory = 20) +
+dotplot(go_enrichment, font.size = 12, showCategory = 10) +
   scale_color_viridis_c() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        text = element_text(color = "black"))
+  
 ```
 
