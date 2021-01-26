@@ -1,14 +1,22 @@
 ---
 title: "Yeast CAGE analysis"
 author: "Gabe Zentner"
-date: "1/4/2021"
 output: html_document
 ---
 
+<!-- Install latest TSRexploreR -->
+<!-- devtools::install_github("zentnerlab/TSRexploreR") -->
+
+<!-- wget command to get CTSS files -->
+<!-- wget -r -np -nd -A .ctss -I /jbrowse/JBrowse_data/Saccharomyces_cerevisiae/ctss/ \ -->
+<!-- http://www.yeastss.org/jbrowse/JBrowse_data/Saccharomyces_cerevisiae/ctss/ -->
+
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE,
-                      message = FALSE,
-                      warning = FALSE)
+knitr::opts_chunk$set(
+	echo = TRUE,
+	message = FALSE,
+	warning = FALSE
+)
 ```
 
 ```{r}
@@ -45,38 +53,40 @@ exp <- format_counts(exp, data_type = "tss")
 exp <- annotate_features(exp, data_type = "tss", feature_type = "transcript", 
                          upstream = 250, downstream = 100)
 
-# Explore thresholds (Fig. 1B)
-threshold_data <- explore_thresholds(exp, steps = 1, max_threshold = 50, 
-                                     samples = "all", use_normalized = FALSE)
+# Set order for all samples to be plotted
+samples_ordered <- c("ScerYPD.1", "ScerYPD.2", "ScerArrest.1", "ScerArrest.2",
+                     "ScerDD.1", "ScerDD.2", "ScerDSA.1", "ScerDSA.2",
+                     "ScerGal.1", "ScerGal.2", "ScerGlc.1", "ScerGlc.2",
+                     "ScerH2O2.1", "ScerH2O2.2", "ScerHS.1", "ScerHS.2",
+                     "ScerNaCl.1", "ScerNaCl.2")
 
-plot_threshold_exploration(threshold_data, ncol = 3, point_size = .5) +
+# Explore thresholds (Fig. 1B, S1)
+plot_threshold_exploration(exp, samples = samples_ordered, max_threshold = 50,
+                           steps = 1, ncol = 3, point_size = 0.5) +
   scale_color_viridis_c() +
-  geom_vline(xintercept = 20, linetype = 2)
+  theme(text = element_text(color = "black")) +
+  geom_vline(xintercept = 10, linetype = 2)
 ```
 
 ### TSS distribution relative to known features
 ```{r fig.align = "center"}
 # Genomic distribution (Fig. 1C)
-tss_distribution <- genomic_distribution(exp, data_type = "tss", threshold = 20)
-
-plot_genomic_distribution(tss_distribution) +
-  scale_fill_viridis_d(direction = -1, name = "Annotation")
+plot_genomic_distribution(exp, data_type = "tss", threshold = 10, samples = samples_ordered) +
+  scale_fill_viridis_d(direction = -1, name = "Annotation") +
+  theme(text = element_text(color = "black"))
 
 # Detected features (Fig. 1D)
-features <- detect_features(exp, data_type = "tss", threshold = 20)
-
-plot_detected_features(features) +
-  scale_fill_viridis_d(end = 0.5)
+plot_detected_features(exp, data_type = "tss", threshold = 10, samples = samples_ordered)  +
+  theme_bw() +
+  scale_fill_viridis_d(end = 0.5) +
+  scale_y_continuous(expand = c(0, 0), limits = c(0, 6500)) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, color = "black")) 
 ```
 
 ### Correlation
 ```{r fig.align = "center"}
 # Normalize counts
-exp <- normalize_counts(exp, data_type = "tss", method = "deseq2", 
-                        threshold = 20, n_samples = 1)
-
-# Apply threshold
-exp <- apply_threshold(exp, threshold = 20, n_samples = 1, use_normalized = FALSE)
+exp <- normalize_counts(exp, data_type = "tss", method = "deseq2")
 
 # Correlation (Fig. 1E)
 plot_correlation(
@@ -85,7 +95,8 @@ plot_correlation(
   use_normalized = TRUE, 
   cluster_samples = TRUE, 
   correlation_metric = "pearson",
-  heatmap_colors = viridis::viridis(100)
+  heatmap_colors = viridis::viridis(100),
+  threshold = 10
 )
 ```
 
@@ -94,32 +105,32 @@ plot_correlation(
 ```{r fig.align = "center"}
 # Tracks (Fig. 1F)
 gene_tracks(exp, feature_name = "YLR081W", promoter_only = FALSE, 
-            samples = c(TSS = "ScerArrest.1", TSS = "ScerGal.1"), 
+            samples = c(TSS = "ScerYPD.1", TSS = "ScerGal.1"), 
             ymax = 10000, tss_colors = viridis::viridis(4), 
-            use_normalized = TRUE, axis_scale = 1,)
+            use_normalized = TRUE, axis_scale = 1, anno_pos = "top")
 
 # Density plot (Fig. 1G)
-plot_density(exp, data_type = "tss", samples = "ScerYPD.1", threshold = 20)
+plot_density(exp, data_type = "tss", samples = "ScerYPD.1", threshold = 10) +
+  theme(text = element_text(color = "black"))
 
 # Heatmap (Fig. 1H)
-tss_matrix <- tss_heatmap_matrix(exp, use_normalized = TRUE, samples = "ScerYPD.1")
-
-plot_heatmap(tss_matrix, background_color = "white")
-
-# Max UTR length (Fig. 1I)
-max_utr_lengths <- max_utr(exp, samples = "ScerYPD.1", threshold = 20, 
-                           feature_type = "transcriptId")
-
-plot_max_utr(max_utr_lengths)
+plot_heatmap(exp, data_type = "tss", samples = "ScerYPD.1", threshold = 10, 
+             log2_transform = TRUE, use_normalized = TRUE, high_color = "#440154FF", 
+             upstream = 1000, downstream = 1000, max_value = 8) +
+  theme(text = element_text(color = "black"))
 ```
 
 ### TSR detection
 ```{r}
 # Cluster TSSs
-exp <- tss_clustering(exp, max_distance = 25, max_width = 250, threshold = 20)
+exp <- tss_clustering(exp, max_distance = 25, max_width = 250, 
+                      threshold = 10, n_samples = 1)
 
 # Associate TSSs with TSRs
 exp <- associate_with_tsr(exp)
+
+# Mark dominant TSS per TSR
+exp <- mark_dominant(exp, data_type = "tss", threshold = 10)
 ```
 
 ### TSR metrics
@@ -127,39 +138,33 @@ exp <- associate_with_tsr(exp)
 exp <- tsr_metrics(exp)
 
 plot_tsr_metric(exp, tsr_metrics = c("shape_index", "iqr_width", "peak_balance"), 
-                log2_transform = FALSE, ncol = 1, 
-                samples = c("ScerYPD.1", "ScerArrest.1", "ScerDD.1", "ScerDSA.1",
-                            "ScerGal.1", "ScerGlc.1", "ScerH2O2.1", "ScerHS.1",
-                            "ScerNaCl.1"))
+                log2_transform = FALSE, ncol = 1, samples = samples_ordered, 
+                threshold = 10) +
+  theme(text = element_text(color = "black"))
 ```
 
 ### Sequence analysis
-```{r}
-# Mark dominant TSS per TSR
-exp <- mark_dominant(exp, data_type = "tss", threshold = 20, use_normalized = FALSE)
-```
-
 ```{r fig.cap = "Sequence logos"}
 # Sequence logos (Fig. 2B-C)
-conditions <- list(quantile_by = "shape_index", n_quantiles = 5, filters = "iqr_width > 1")
-
-seqs <- tss_sequences(exp, dominant = TRUE, data_conditions = conditions, 
-                      samples = "ScerYPD.1", threshold = 20)
-
-plot_sequence_logo(seqs, ncol = 2)
+plot_sequence_logo(
+  exp, dominant = TRUE, samples = "ScerYPD.1", data_conditions = conditionals(
+    data_quantiling = quantiling(score, 5), data_filters = iqr_width > 10))
 ```
 
 ```{r}
 # Color map (Fig. 2D)
-#plot_sequence_colormap(seqs, samples = "ScerYPD.1")
+plot_sequence_colormap(exp, samples = "ScerYPD.1", dominant = TRUE, 
+                       data_conditions = conditionals(
+                         data_filters = tsr_width > 10)) +
+  theme(text = element_text(color = "black", size = 12))
 ```
 
 ```{r fig.align = "center", fig.cap = "Dinucleotide frequencies for YPD replicate 1"}
 # Dinucleotide frequencies (Fig. 2E)
-frequencies <- dinucleotide_frequencies(exp, dominant = FALSE, samples = "ScerYPD.1")
-
-plot_dinucleotide_frequencies(frequencies, ncol = 4) +
-  scale_fill_viridis_c()
+plot_dinucleotide_frequencies(exp, samples = "ScerYPD.1", dominant = TRUE, threshold = 10,
+                              data_conditions = conditionals(data_filters = iqr_width > 10)) +
+  scale_fill_viridis_c() +
+  theme(text = element_text(color = "black"))
 ```
 
 ### Differential TSR analysis
@@ -187,30 +192,29 @@ for(i in treatments) {
 plot_num_de(exp, data_type = "tsr", de_comparisons = "all",
             log2fc_cutoff = 1, fdr_cutoff = 0.05, 
             keep_unchanged = FALSE) +
-  theme_classic() +
+  theme_bw() +
   scale_fill_viridis_d(end = 0.5) +
-  scale_y_continuous(expand = c(0,0), limits = c(0,6000)) +
-  theme(panel.grid = element_blank(),
-        axis.text.x = element_text(angle = 45, hjust = 1),
-        text = element_text(color = "black")) 
+  scale_y_continuous(expand = c(0,0), limits = c(0,8000)) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        text = element_text(color = "black", size = 12)) 
 ```
 
 ```{r fig.align = "center", fig.cap = "MA plot for YPG vs. YPD comparison"}
-plot_ma(exp, data_type = "tsr", de_comparisons = "ScerGal_vs_YPD", size = 0.5) +
-  scale_color_viridis_d() +
+plot_ma(exp, data_type = "tsr", de_comparisons = "ScerGal_vs_YPD", size = 1) +
+  scale_color_viridis_d(end = 0.6, direction = -1) +
   theme_bw() +
-  theme(text = element_text(color = "black"))
+  theme(text = element_text(color = "black", size = 12))
 ```
 
 ```{r fig.align = "center", fig.cap = "Volcano plot for YPG vs. YPD comparison"}
-plot_volcano(exp, data_type = "tsr", de_comparisons = "ScerGal_vs_YPD", size = 0.5) +
-  scale_color_viridis_d() +
+plot_volcano(exp, data_type = "tsr", de_comparisons = "ScerGal_vs_YPD", size = 1) +
   theme_bw() +
-  theme(text = element_text(color = "black"))
+  scale_color_viridis_d(end = 0.6, direction = -1) +
+  theme(text = element_text(color = "black", size = 12))
 ```
 
 ### Functional annotation of differential TSRs
-```{r fig.align = "center", fig.height = 10, fig.cap = "Dot plot of GO biological process enrichment in upregulated and downregulated TSRs in for YPG vs. YPD comparison"}
+```{r fig.align = "center", fig.height = 10, fig.width = 18, fig.cap = "Dot plot of GO biological process enrichment in upregulated and downregulated TSRs in for YPG vs. YPD comparison"}
 # Annotate DE TSRs
 exp <- annotate_features(exp, data_type = "tsr_diff", feature_type = "transcript",
                          upstream = 500, downstream = 100)
@@ -218,8 +222,8 @@ exp <- annotate_features(exp, data_type = "tsr_diff", feature_type = "transcript
 # GO analysis (Fig. 2I)
 enrichment_data <- export_for_enrichment(exp, data_type = "tsr", 
                                          de_comparisons = "ScerGal_vs_YPD",
-                                         keep_unchanged = FALSE) %>%
-  filter(simple_annotations == "Promoter")
+                                         keep_unchanged = FALSE, 
+                                         anno_categories = "Promoter")
 
 library("clusterProfiler")
 library("org.Sc.sgd.db")
@@ -237,8 +241,8 @@ go_enrichment <- compareCluster(
 
 dotplot(go_enrichment, font.size = 12, showCategory = 10) +
   scale_color_viridis_c() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1),
-        text = element_text(color = "black"))
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 22),
+        text = element_text(color = "black", size = 22))
   
 ```
 
