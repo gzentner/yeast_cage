@@ -1,7 +1,9 @@
 ---
 title: "Yeast CAGE analysis"
 author: "Gabe Zentner"
-output: html_document
+output:
+  pdf_document: default
+  html_document: default
 ---
 
 <!-- Install latest TSRexploreR -->
@@ -48,7 +50,7 @@ exp <- format_counts(exp, data_type = "tss")
 ```
 
 ### Threshold exploration
-```{r fig.align = "center"}
+```{r fig.align = "center", fig.height = 10}
 # Annotate TSSs
 exp <- annotate_features(exp, data_type = "tss", feature_type = "transcript", 
                          upstream = 250, downstream = 100)
@@ -88,15 +90,27 @@ plot_detected_features(exp, data_type = "tss", threshold = 10, samples = samples
 # Normalize counts
 exp <- normalize_counts(exp, data_type = "tss", method = "deseq2")
 
+# PCA
+plot_reduction(exp, data_type = "tss", legendPosition = "right", 
+               colby = "condition", labSize = 0, drawConnectors = FALSE, 
+               colkey = c(ScerArrest = "#440154FF",
+                          ScerDD = "#472D7BFF",
+                          ScerDSA = "#3B528BFF",
+                          ScerGal = "#2C728EFF",
+                          ScerGlc = "#21908CFF",
+                          ScerH2O2 = "#27AD81FF",
+                          ScerHS = "#5DC863FF",
+                          ScerNaCl = "#AADC32FF",
+                          ScerYPD = "#FDE725FF"))
+
 # Correlation (Fig. 1E)
 plot_correlation(
   exp, data_type = "tss", 
-  font_size = 12,
+  font_size = 8,
   use_normalized = TRUE, 
   cluster_samples = TRUE, 
   correlation_metric = "pearson",
-  heatmap_colors = viridis::viridis(100),
-  threshold = 10
+  heatmap_colors = viridis::viridis(100)
 )
 ```
 
@@ -116,7 +130,8 @@ plot_density(exp, data_type = "tss", samples = "ScerYPD.1", threshold = 10) +
 # Heatmap (Fig. 1H)
 plot_heatmap(exp, data_type = "tss", samples = "ScerYPD.1", threshold = 10, 
              log2_transform = TRUE, use_normalized = TRUE, high_color = "#440154FF", 
-             upstream = 1000, downstream = 1000, max_value = 8) +
+             upstream = 1000, downstream = 1000, max_value = 8, rasterize = TRUE,
+             raster_dpi = 150) +
   theme(text = element_text(color = "black"))
 ```
 
@@ -148,21 +163,21 @@ plot_tsr_metric(exp, tsr_metrics = c("shape_index", "iqr_width", "peak_balance")
 # Sequence logos (Fig. 2B-C)
 plot_sequence_logo(
   exp, dominant = TRUE, samples = "ScerYPD.1", data_conditions = conditionals(
-    data_quantiling = quantiling(score, 5), data_filters = iqr_width > 10))
+    data_quantiling = quantiling(score, 5), data_filters = tsr_width > 1))
 ```
 
 ```{r}
 # Color map (Fig. 2D)
 plot_sequence_colormap(exp, samples = "ScerYPD.1", dominant = TRUE, 
                        data_conditions = conditionals(
-                         data_filters = tsr_width > 10)) +
+                         data_filters = tsr_width > 1),
+                       rasterize = TRUE, raster_dpi = 150) +
   theme(text = element_text(color = "black", size = 12))
 ```
 
 ```{r fig.align = "center", fig.cap = "Dinucleotide frequencies for YPD replicate 1"}
 # Dinucleotide frequencies (Fig. 2E)
-plot_dinucleotide_frequencies(exp, samples = "ScerYPD.1", dominant = TRUE, threshold = 10,
-                              data_conditions = conditionals(data_filters = iqr_width > 10)) +
+plot_dinucleotide_frequencies(exp, samples = "ScerYPD.1", dominant = TRUE, threshold = 10) +
   scale_fill_viridis_c() +
   theme(text = element_text(color = "black"))
 ```
